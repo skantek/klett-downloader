@@ -4,6 +4,18 @@ import inquirer from "inquirer";
 import * as asyncfs from "fs/promises"
 import path from 'node:path';
 
+if (process.argv.includes("--debug")) {
+    console.log("\n \x1b[32mDebug włączony\x1b[0m")
+} else {
+    process.on('unhandledRejection', () => {});
+    process.on('uncaughtException', () => {});
+}
+
+process.on('SIGINT', () => {
+    console.log("\nAnulowanie...")
+    process.exit(0)
+})
+
 console.log(`
  Witamy w
   _  ___      _   _     _____                      _                 _           
@@ -13,6 +25,11 @@ console.log(`
  | . \\| |  __/ |_| |_  | |__| | (_) \\ V  V /| | | | | (_) | (_| | (_| |  __/ |   
  |_|\\_\\_|\\___|\\__|\\__| |_____/ \\___/ \\_/\\_/ |_| |_|_|\\___/ \\__,_|\\__,_|\\___|_|   
 `);
+
+if (process.argv.includes("--help")) {
+    console.log("Pomoc (dodano argument --help):\nOpcje:\n   --debug Pozwala na wyświetlanie wszystkich błędów\n   --help Wyświetla ten ekran pomocy")
+    process.exit()
+}
 
 const languages = ["Wychowanie przedszkolne", "Niemiecki", "Hiszpański", "Rosyjski", "Francuski", "Angielski"]
 
@@ -55,6 +72,16 @@ const selectedSeries = series.find((obj) => obj.name == seriesForm.series)
 
 books = books.filter((obj) => {return obj.series == selectedSeries.name})
 
+const files = await asyncfs.readdir("./downloads")
+
+files.forEach(file => {
+    const bookToChange = books.find(obj => obj.slug == file)
+
+    if (bookToChange) {
+        bookToChange.name = `${bookToChange.name} \x1b[32m(pobrane)\x1b[0m`
+    }
+})
+
 const bookForm = await inquirer.prompt([
     {
         type: "select",
@@ -89,10 +116,12 @@ async function downloadRecording(item) {
                 console.log(`Pobrano \x1b[32m${filename}\x1b[0m (${Math.round(recordingsDownloadedAmount / recordingsAmount * 100)}%, ${recordingsDownloadedAmount}/${recordingsAmount}, ~${recordingsDownloadedSize}/${recordingsSize} MB)`)
                 })
             })
-        }).on('error', (err) => {
+        }).on('error', async (err) => {
             fs.unlink(filepath, () => {
                 console.log("Nie pobrano, błąd:", err)
+                recordingsDownloadedAmount++
             })
+            await asyncfs.rm(filepath)
         })
     } else if ((item.type === 'video') && item.vimeo_id) {
         console.log(`Video z Vimeo, \x1b[32mpomijanie...\x1b[0m (${item.name})`)
