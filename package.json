@@ -1,0 +1,17 @@
+{
+  "name": "klett-downloader",
+  "version": "1.0.0",
+  "description": "Downloader do nagrań z Chmury Klett",
+  "main": "index.js",
+  "scripts": {},
+  "repository": {
+    "type": "git",
+    "url": "klett-downloader"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "inquirer": "^13.3.0"
+  },
+  "type": "module"
+}
